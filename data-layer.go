@@ -151,7 +151,7 @@ func (p *PostgresDL) DeleteUser(id int) error {
 		return err
 	}
 	if count == 0 {
-		return fmt.Errorf("Error: no row deleted !")
+		return fmt.Errorf("Error: no row deleted")
 	}
 	return nil
 }
