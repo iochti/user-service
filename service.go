@@ -58,11 +58,11 @@ func (u *UserSvc) GetUser(ctx context.Context, in *pb.UserRequest) (*pb.UserMess
 		return nil, err
 	}
 	res.User = enc
-	return &pb.UserMessage{}, nil
+	return res, nil
 }
 
 // CreateUser is a RPC method that creates a user in the database
-func (u *UserSvc) CreateUser(ctx context.Context, in *pb.UserMessage) (*pb.UserID, error) {
+func (u *UserSvc) CreateUser(ctx context.Context, in *pb.UserMessage) (*pb.UserMessage, error) {
 	userBytes := in.GetUser()
 	var user models.User
 	if err := json.Unmarshal(userBytes, &user); err != nil {
@@ -73,7 +73,12 @@ func (u *UserSvc) CreateUser(ctx context.Context, in *pb.UserMessage) (*pb.UserI
 		return nil, err
 	}
 
-	return &pb.UserID{Id: int32(user.ID)}, nil
+	userBytes, err := json.Marshal(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.UserMessage{User: userBytes}, nil
 }
 
 // DeleteUser is a RPC method that deletes a user in the database

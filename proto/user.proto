@@ -4,7 +4,7 @@ package proto;
 
 service UserSvc {
   rpc GetUser(UserRequest) returns (UserMessage) {}
-  rpc CreateUser(UserMessage) returns (UserID) {}
+  rpc CreateUser(UserMessage) returns (UserMessage) {}
   rpc DeleteUser(UserID) returns (UserDeleted) {}
 }
 

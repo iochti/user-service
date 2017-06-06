@@ -51,7 +51,7 @@ func (p *PostgresDL) Init() error {
 func (p *PostgresDL) CreateUser(user *models.User) error {
 	var userID int
 	err := p.Db.QueryRow(`INSERT INTO users(name, login, avatar, ghubid, token)
-		VALUES($1, $2, $3, $4, $5) RETURNING id`,
+		VALUES($1, $2, $3, $4, $5) RETURNING id;`,
 		user.Name, user.Login, user.AvatarURL, user.GhubID, user.AuthToken).Scan(&userID)
 
 	if err != nil {
@@ -68,7 +68,7 @@ func (p *PostgresDL) GetUserByID(id int) (*models.User, error) {
 		return nil, fmt.Errorf("Error, invalid search ID: id must be > 0")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE id=$1", id).Scan(
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE id=$1;", id).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Login,
@@ -91,7 +91,7 @@ func (p *PostgresDL) GetUserByGhubID(id int) (*models.User, error) {
 		return nil, fmt.Errorf("Error, invalid search ID: id must be > 0")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE ghubid=$1", id).Scan(
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE ghubid=$1;", id).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Login,
@@ -114,7 +114,7 @@ func (p *PostgresDL) GetUserByToken(token string) (*models.User, error) {
 		return nil, fmt.Errorf("Error, invalid search: token should not be empty")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE token=$1", token).Scan(
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE token=$1;", token).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Login,
@@ -137,7 +137,7 @@ func (p *PostgresDL) GetUserByLogin(login string) (*models.User, error) {
 		return nil, fmt.Errorf("Error, invalid search: login must not be empty")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE login=$1", login).Scan(
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE login=$1;", login).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Login,
@@ -159,9 +159,16 @@ func (p *PostgresDL) DeleteUser(id int) error {
 		return fmt.Errorf("Error, invalid argument: id must be > 0")
 	}
 
-	if err := p.Db.QueryRow("DELETE FROM users WHERE id = $1", id).Scan(); err != nil {
+	res, err := p.Db.Exec("DELETE FROM users WHERE id = $1;", id)
+	if err != nil {
 		return err
 	}
-
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf("Error: no row deleted !")
+	}
 	return nil
 }
