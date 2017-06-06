@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/namsral/flag"
 
@@ -16,8 +17,7 @@ import (
 type DataLayerInterface interface {
 	CreateUser(user *models.User) error
 	GetUserByID(id int) (*models.User, error)
-	GetUserByGhubID(id int) (*models.User, error)
-	GetUserByToken(token string) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
 	GetUserByLogin(login string) (*models.User, error)
 	DeleteUser(id int) error
 }
@@ -50,14 +50,17 @@ func (p *PostgresDL) Init() error {
 // CreateUser creates a user passed as parameter
 func (p *PostgresDL) CreateUser(user *models.User) error {
 	var userID int
-	err := p.Db.QueryRow(`INSERT INTO users(name, login, avatar, ghubid, token)
-		VALUES($1, $2, $3, $4, $5) RETURNING id;`,
-		user.Name, user.Login, user.AvatarURL, user.GhubID, user.AuthToken).Scan(&userID)
+	timeCreated := time.Now()
+	err := p.Db.QueryRow(`INSERT INTO users(name, login, avatar, email, created_at, updated_at)
+		VALUES($1, $2, $3, $4, $5, $5) RETURNING id;`,
+		user.Name, user.Login, user.AvatarURL, user.Email, timeCreated).Scan(&userID)
 
 	if err != nil {
 		return err
 	}
 	user.ID = userID
+	user.Created = timeCreated
+	user.Updated = timeCreated
 	return nil
 }
 
@@ -68,59 +71,14 @@ func (p *PostgresDL) GetUserByID(id int) (*models.User, error) {
 		return nil, fmt.Errorf("Error, invalid search ID: id must be > 0")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE id=$1;", id).Scan(
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, email, created_at, updated_at FROM users WHERE id=$1;", id).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Login,
 		&user.AvatarURL,
-		&user.GhubID,
-		&user.AuthToken,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// GetUserByGhubID fetch a user by its github id
-func (p *PostgresDL) GetUserByGhubID(id int) (*models.User, error) {
-	// Check ID values
-	if id <= 0 {
-		return nil, fmt.Errorf("Error, invalid search ID: id must be > 0")
-	}
-	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE ghubid=$1;", id).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Login,
-		&user.AvatarURL,
-		&user.GhubID,
-		&user.AuthToken,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// GetUserByToken fetch a user by its last known token
-func (p *PostgresDL) GetUserByToken(token string) (*models.User, error) {
-	// Check ID values
-	if token == "" {
-		return nil, fmt.Errorf("Error, invalid search: token should not be empty")
-	}
-	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE token=$1;", token).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Login,
-		&user.AvatarURL,
-		&user.GhubID,
-		&user.AuthToken,
+		&user.Email,
+		&user.Created,
+		&user.Updated,
 	)
 
 	if err != nil {
@@ -137,13 +95,38 @@ func (p *PostgresDL) GetUserByLogin(login string) (*models.User, error) {
 		return nil, fmt.Errorf("Error, invalid search: login must not be empty")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, ghubid, token FROM users WHERE login=$1;", login).Scan(
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, email, created_at, updated_at FROM users WHERE login=$1;", login).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Login,
 		&user.AvatarURL,
-		&user.GhubID,
-		&user.AuthToken,
+		&user.Email,
+		&user.Created,
+		&user.Updated,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// GetUserByEmail fetch a user by its github email
+func (p *PostgresDL) GetUserByEmail(email string) (*models.User, error) {
+	// Check ID values
+	if email == "" {
+		return nil, fmt.Errorf("Error, invalid search: login must not be empty")
+	}
+	user := new(models.User)
+	err := p.Db.QueryRow("SELECT id, name, login, avatar, email, created_at, updated_at FROM users WHERE email=$1;", email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Login,
+		&user.AvatarURL,
+		&user.Email,
+		&user.Created,
+		&user.Updated,
 	)
 
 	if err != nil {

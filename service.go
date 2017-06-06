@@ -23,7 +23,7 @@ func (u *UserSvc) GetUser(ctx context.Context, in *pb.UserRequest) (*pb.UserMess
 	var id int
 	var err error
 	// If the expected value is a number instead of a string
-	if categ == "id" || categ == "ghubid" {
+	if categ == "id" {
 		id, err = strconv.Atoi(in.GetValue())
 		if err != nil {
 			return nil, err
@@ -34,11 +34,8 @@ func (u *UserSvc) GetUser(ctx context.Context, in *pb.UserRequest) (*pb.UserMess
 	case "id":
 		user, err = u.Db.GetUserByID(id)
 		break
-	case "ghubid":
-		user, err = u.Db.GetUserByGhubID(id)
-		break
-	case "token":
-		user, err = u.Db.GetUserByToken(in.GetValue())
+	case "email":
+		user, err = u.Db.GetUserByEmail(in.GetValue())
 		break
 	case "login":
 		user, err = u.Db.GetUserByLogin(in.GetValue())

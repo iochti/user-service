@@ -1,15 +1,19 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // User represents a platform user
 type User struct {
-	ID        int    `json:"id"`
-	Login     string `json:"login"`
-	AvatarURL string `json:"avatar_url"`
-	Name      string `json:"name"`
-	GhubID    int    `json:"ghub_id"`
-	AuthToken string `json:"auth_token"`
+	ID        int       `json:"id"`
+	Email     string    `json:"email"`
+	Login     string    `json:"login"`
+	AvatarURL string    `json:"avatar_url"`
+	Name      string    `json:"name"`
+	Created   time.Time `json:"created"`
+	Updated   time.Time `json:"updated"`
 }
 
 // ToByte converts the user in a byte array
