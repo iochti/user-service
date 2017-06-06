@@ -62,7 +62,17 @@ func (u *UserSvc) GetUser(ctx context.Context, in *pb.UserRequest) (*pb.UserMess
 
 // CreateUser is a RPC method that creates a user in the database
 func (u *UserSvc) CreateUser(ctx context.Context, in *pb.UserMessage) (*pb.UserID, error) {
-	return &pb.UserID{}, nil
+	userBytes := in.GetUser()
+	var user models.User
+	if err := json.Unmarshal(userBytes, &user); err != nil {
+		return nil, err
+	}
+
+	if err := u.Db.CreateUser(&user); err != nil {
+		return nil, err
+	}
+
+	return &pb.UserID{Id: int32(user.ID)}, nil
 }
 
 // DeleteUser is a RPC method that deletes a user in the database
