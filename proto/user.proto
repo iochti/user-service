@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package proto;
+
+service UserSvc {
+  rpc GetUser(UserRequest) returns (UserMessage) {}
+  rpc CreateUser(UserMessage) returns (UserCreated) {}
+}
+
+message UserRequest {
+  int32   ghubid = 1;
+  int32   id = 2;
+  string  login = 3;
+  string token = 4;
+}
+
+message UserMessage {
+  string userText = 1;
+}
+
+message UserCreated {
+  int32 createdId = 1;
+}
