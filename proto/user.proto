@@ -4,20 +4,24 @@ package proto;
 
 service UserSvc {
   rpc GetUser(UserRequest) returns (UserMessage) {}
-  rpc CreateUser(UserMessage) returns (UserCreated) {}
+  rpc CreateUser(UserMessage) returns (UserID) {}
+  rpc DeleteUser(UserID) returns (UserDeleted) {}
 }
 
 message UserRequest {
-  int32   ghubid = 1;
-  int32   id = 2;
-  string  login = 3;
-  string token = 4;
+  string categ = 1;
+  string value = 2;
 }
 
 message UserMessage {
-  string userText = 1;
+  bytes user = 1;
 }
 
-message UserCreated {
-  int32 createdId = 1;
+message UserID {
+  int32 id = 1;
+}
+
+message UserDeleted {
+  bool deleted = 1;
+  int32 id = 2;
 }

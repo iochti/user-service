@@ -11,7 +11,8 @@ It is generated from these files:
 It has these top-level messages:
 	UserRequest
 	UserMessage
-	UserCreated
+	UserID
+	UserDeleted
 */
 package proto
 
@@ -36,9 +37,8 @@ var _ = math.Inf
 const _ = proto1.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type UserRequest struct {
-	Ghubid int32  `protobuf:"varint,1,opt,name=ghubid" json:"ghubid,omitempty"`
-	Id     int32  `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`
-	Login  string `protobuf:"bytes,3,opt,name=login" json:"login,omitempty"`
+	Categ string `protobuf:"bytes,1,opt,name=categ" json:"categ,omitempty"`
+	Value string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
 }
 
 func (m *UserRequest) Reset()                    { *m = UserRequest{} }
@@ -46,29 +46,22 @@ func (m *UserRequest) String() string            { return proto1.CompactTextStri
 func (*UserRequest) ProtoMessage()               {}
 func (*UserRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-func (m *UserRequest) GetGhubid() int32 {
+func (m *UserRequest) GetCateg() string {
 	if m != nil {
-		return m.Ghubid
+		return m.Categ
 	}
-	return 0
+	return ""
 }
 
-func (m *UserRequest) GetId() int32 {
+func (m *UserRequest) GetValue() string {
 	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-func (m *UserRequest) GetLogin() string {
-	if m != nil {
-		return m.Login
+		return m.Value
 	}
 	return ""
 }
 
 type UserMessage struct {
-	UserText string `protobuf:"bytes,1,opt,name=userText" json:"userText,omitempty"`
+	User []byte `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 }
 
 func (m *UserMessage) Reset()                    { *m = UserMessage{} }
@@ -76,25 +69,49 @@ func (m *UserMessage) String() string            { return proto1.CompactTextStri
 func (*UserMessage) ProtoMessage()               {}
 func (*UserMessage) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
-func (m *UserMessage) GetUserText() string {
+func (m *UserMessage) GetUser() []byte {
 	if m != nil {
-		return m.UserText
+		return m.User
 	}
-	return ""
+	return nil
 }
 
-type UserCreated struct {
-	CreatedId int32 `protobuf:"varint,1,opt,name=createdId" json:"createdId,omitempty"`
+type UserID struct {
+	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
 }
 
-func (m *UserCreated) Reset()                    { *m = UserCreated{} }
-func (m *UserCreated) String() string            { return proto1.CompactTextString(m) }
-func (*UserCreated) ProtoMessage()               {}
-func (*UserCreated) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (m *UserID) Reset()                    { *m = UserID{} }
+func (m *UserID) String() string            { return proto1.CompactTextString(m) }
+func (*UserID) ProtoMessage()               {}
+func (*UserID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
-func (m *UserCreated) GetCreatedId() int32 {
+func (m *UserID) GetId() int32 {
 	if m != nil {
-		return m.CreatedId
+		return m.Id
+	}
+	return 0
+}
+
+type UserDeleted struct {
+	Deleted bool  `protobuf:"varint,1,opt,name=deleted" json:"deleted,omitempty"`
+	Id      int32 `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`
+}
+
+func (m *UserDeleted) Reset()                    { *m = UserDeleted{} }
+func (m *UserDeleted) String() string            { return proto1.CompactTextString(m) }
+func (*UserDeleted) ProtoMessage()               {}
+func (*UserDeleted) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *UserDeleted) GetDeleted() bool {
+	if m != nil {
+		return m.Deleted
+	}
+	return false
+}
+
+func (m *UserDeleted) GetId() int32 {
+	if m != nil {
+		return m.Id
 	}
 	return 0
 }
@@ -102,7 +119,8 @@ func (m *UserCreated) GetCreatedId() int32 {
 func init() {
 	proto1.RegisterType((*UserRequest)(nil), "proto.UserRequest")
 	proto1.RegisterType((*UserMessage)(nil), "proto.UserMessage")
-	proto1.RegisterType((*UserCreated)(nil), "proto.UserCreated")
+	proto1.RegisterType((*UserID)(nil), "proto.UserID")
+	proto1.RegisterType((*UserDeleted)(nil), "proto.UserDeleted")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -117,7 +135,8 @@ const _ = grpc.SupportPackageIsVersion4
 
 type UserSvcClient interface {
 	GetUser(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*UserMessage, error)
-	CreateUser(ctx context.Context, in *UserMessage, opts ...grpc.CallOption) (*UserCreated, error)
+	CreateUser(ctx context.Context, in *UserMessage, opts ...grpc.CallOption) (*UserID, error)
+	DeleteUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*UserDeleted, error)
 }
 
 type userSvcClient struct {
@@ -137,9 +156,18 @@ func (c *userSvcClient) GetUser(ctx context.Context, in *UserRequest, opts ...gr
 	return out, nil
 }
 
-func (c *userSvcClient) CreateUser(ctx context.Context, in *UserMessage, opts ...grpc.CallOption) (*UserCreated, error) {
-	out := new(UserCreated)
+func (c *userSvcClient) CreateUser(ctx context.Context, in *UserMessage, opts ...grpc.CallOption) (*UserID, error) {
+	out := new(UserID)
 	err := grpc.Invoke(ctx, "/proto.UserSvc/CreateUser", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userSvcClient) DeleteUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*UserDeleted, error) {
+	out := new(UserDeleted)
+	err := grpc.Invoke(ctx, "/proto.UserSvc/DeleteUser", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +178,8 @@ func (c *userSvcClient) CreateUser(ctx context.Context, in *UserMessage, opts ..
 
 type UserSvcServer interface {
 	GetUser(context.Context, *UserRequest) (*UserMessage, error)
-	CreateUser(context.Context, *UserMessage) (*UserCreated, error)
+	CreateUser(context.Context, *UserMessage) (*UserID, error)
+	DeleteUser(context.Context, *UserID) (*UserDeleted, error)
 }
 
 func RegisterUserSvcServer(s *grpc.Server, srv UserSvcServer) {
@@ -193,6 +222,24 @@ func _UserSvc_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserSvc_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserSvcServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.UserSvc/DeleteUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserSvcServer).DeleteUser(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _UserSvc_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.UserSvc",
 	HandlerType: (*UserSvcServer)(nil),
@@ -205,6 +252,10 @@ var _UserSvc_serviceDesc = grpc.ServiceDesc{
 			MethodName: "CreateUser",
 			Handler:    _UserSvc_CreateUser_Handler,
 		},
+		{
+			MethodName: "DeleteUser",
+			Handler:    _UserSvc_DeleteUser_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "user.proto",
@@ -213,18 +264,20 @@ var _UserSvc_serviceDesc = grpc.ServiceDesc{
 func init() { proto1.RegisterFile("user.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 208 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2a, 0x2d, 0x4e, 0x2d,
-	0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x05, 0x53, 0x4a, 0xde, 0x5c, 0xdc, 0xa1, 0xc5,
-	0xa9, 0x45, 0x41, 0xa9, 0x85, 0xa5, 0xa9, 0xc5, 0x25, 0x42, 0x62, 0x5c, 0x6c, 0xe9, 0x19, 0xa5,
-	0x49, 0x99, 0x29, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0xac, 0x41, 0x50, 0x9e, 0x10, 0x1f, 0x17, 0x53,
-	0x66, 0x8a, 0x04, 0x13, 0x58, 0x8c, 0x29, 0x33, 0x45, 0x48, 0x84, 0x8b, 0x35, 0x27, 0x3f, 0x3d,
-	0x33, 0x4f, 0x82, 0x59, 0x81, 0x51, 0x83, 0x33, 0x08, 0xc2, 0x51, 0xd2, 0x84, 0x18, 0xe6, 0x9b,
-	0x5a, 0x5c, 0x9c, 0x98, 0x9e, 0x2a, 0x24, 0xc5, 0xc5, 0x01, 0xb2, 0x30, 0x24, 0xb5, 0xa2, 0x04,
-	0x6c, 0x1c, 0x67, 0x10, 0x9c, 0xaf, 0xa4, 0x0d, 0x51, 0xea, 0x5c, 0x94, 0x9a, 0x58, 0x92, 0x9a,
-	0x22, 0x24, 0xc3, 0xc5, 0x99, 0x0c, 0x61, 0x7a, 0xc2, 0xac, 0x46, 0x08, 0x18, 0x95, 0x71, 0xb1,
-	0x83, 0x14, 0x07, 0x97, 0x25, 0x0b, 0x19, 0x73, 0xb1, 0xbb, 0xa7, 0x96, 0x80, 0x78, 0x42, 0x42,
-	0x10, 0x9f, 0xe8, 0x21, 0xb9, 0x5f, 0x0a, 0x59, 0x0c, 0xea, 0x0c, 0x25, 0x06, 0x21, 0x33, 0x2e,
-	0x2e, 0x88, 0x45, 0x18, 0xfa, 0xa0, 0x6a, 0x50, 0xf4, 0x41, 0xdd, 0xa4, 0xc4, 0x90, 0xc4, 0x06,
-	0x16, 0x34, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xe1, 0x9c, 0x3c, 0x4f, 0x38, 0x01, 0x00, 0x00,
+	// 227 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x8f, 0x4f, 0x4b, 0xc4, 0x30,
+	0x10, 0xc5, 0xb7, 0xc1, 0x6e, 0x75, 0xfc, 0x73, 0x18, 0x3c, 0x84, 0x3d, 0x69, 0x4e, 0x9e, 0x16,
+	0x74, 0x0f, 0xe2, 0xd9, 0x82, 0xec, 0xc1, 0x4b, 0xc4, 0x0f, 0x10, 0x37, 0xc3, 0xb2, 0x50, 0xa8,
+	0x26, 0x69, 0x3f, 0x91, 0x1f, 0x54, 0x32, 0x93, 0x42, 0x8b, 0xa7, 0xce, 0x7b, 0xf3, 0x7e, 0xcd,
+	0x3c, 0x80, 0x21, 0x52, 0xd8, 0x7e, 0x87, 0x3e, 0xf5, 0x58, 0xf3, 0xc7, 0xbc, 0xc0, 0xe5, 0x67,
+	0xa4, 0x60, 0xe9, 0x67, 0xa0, 0x98, 0xf0, 0x16, 0xea, 0x83, 0x4b, 0x74, 0xd4, 0xd5, 0x5d, 0xf5,
+	0x70, 0x61, 0x45, 0x64, 0x77, 0x74, 0xdd, 0x40, 0x5a, 0x89, 0xcb, 0xc2, 0xdc, 0x0b, 0xfa, 0x4e,
+	0x31, 0xba, 0x23, 0x21, 0xc2, 0x59, 0xfe, 0x3d, 0x93, 0x57, 0x96, 0x67, 0xa3, 0x61, 0x9d, 0x23,
+	0xfb, 0x16, 0x6f, 0x40, 0x9d, 0x3c, 0xef, 0x6a, 0xab, 0x4e, 0xde, 0x3c, 0x0b, 0xdc, 0x52, 0x47,
+	0x89, 0x3c, 0x6a, 0x68, 0xbc, 0x8c, 0x9c, 0x39, 0xb7, 0x93, 0x2c, 0xa0, 0x9a, 0xc0, 0xa7, 0xdf,
+	0x0a, 0x9a, 0x4c, 0x7e, 0x8c, 0x07, 0xdc, 0x41, 0xf3, 0x46, 0x29, 0x2b, 0x44, 0xa9, 0xb5, 0x9d,
+	0x95, 0xd9, 0xcc, 0xbd, 0x72, 0xa5, 0x59, 0xe1, 0x23, 0xc0, 0x6b, 0x20, 0x97, 0xe8, 0x1f, 0x57,
+	0x32, 0x9b, 0xeb, 0x99, 0xb7, 0x6f, 0x05, 0x91, 0x43, 0x19, 0x59, 0xae, 0x17, 0xaf, 0x94, 0x3a,
+	0x66, 0xf5, 0xb5, 0x66, 0x73, 0xf7, 0x17, 0x00, 0x00, 0xff, 0xff, 0xe2, 0x06, 0x22, 0x69, 0x73,
+	0x01, 0x00, 0x00,
 }

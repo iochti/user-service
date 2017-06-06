@@ -15,3 +15,4 @@
 
 init.sh
 create-user-table.sql
+.DS_Store

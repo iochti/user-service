@@ -19,6 +19,7 @@ type DataLayerInterface interface {
 	GetUserByGhubID(id int) (*models.User, error)
 	GetUserByToken(token string) (*models.User, error)
 	GetUserByLogin(login string) (*models.User, error)
+	DeleteUser(id int) error
 }
 
 // PostgresDL implements the DataLayerInterface
@@ -150,4 +151,17 @@ func (p *PostgresDL) GetUserByLogin(login string) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+// DeleteUser delete a user identified by its id
+func (p *PostgresDL) DeleteUser(id int) error {
+	if id <= 0 {
+		return fmt.Errorf("Error, invalid argument: id must be > 0")
+	}
+
+	if err := p.Db.QueryRow("DELETE FROM users WHERE id = $1", id).Scan(); err != nil {
+		return err
+	}
+
+	return nil
 }
