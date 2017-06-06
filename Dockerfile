@@ -14,4 +14,7 @@ RUN go get github.com/tools/godep
 RUN godep restore
 RUN go install ./...
 
+# Clean the directory to reduce space
+RUN rm -rf ./go/src/github.com/iochti/user-service
+
 CMD ["user-service"]
