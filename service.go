@@ -1,10 +1,11 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
+
+	"golang.org/x/net/context"
 
 	"github.com/iochti/user-service/models"
 	pb "github.com/iochti/user-service/proto"
