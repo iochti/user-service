@@ -29,7 +29,7 @@ type PostgresDL struct {
 	Db     *sql.DB
 }
 
-const USER_TABLE = "user"
+const USER_TABLE = "account"
 
 // Init fetches db flags and init the db conn
 func (p *PostgresDL) Init() error {
