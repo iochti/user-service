@@ -62,7 +62,7 @@ func (m *MgoDL) CreateUser(user *models.User) error {
 	timeCreated := time.Now()
 	sess := m.Session.Copy()
 	defer sess.Close()
-	user.ID = bson.NewObjectId().String()
+	user.ID = bson.NewObjectId()
 	user.Created = timeCreated
 	user.Updated = timeCreated
 	if err := sess.DB(m.DBName).C(USER_COLLECTION).Insert(&user); err != nil {
@@ -76,7 +76,7 @@ func (m *MgoDL) GetUserByID(id string) (*models.User, error) {
 	sess := m.Session.Copy()
 	defer sess.Close()
 	var user models.User
-	if err := sess.DB(m.DBName).C(USER_COLLECTION).FindId(id).One(&user); err != nil {
+	if err := sess.DB(m.DBName).C(USER_COLLECTION).FindId(bson.ObjectIdHex(id)).One(&user); err != nil {
 		return nil, err
 	}
 	return &user, nil
