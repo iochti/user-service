@@ -18,10 +18,10 @@ import (
 // used for testing too
 type DataLayerInterface interface {
 	CreateUser(user *models.User) error
-	GetUserByID(id int) (*models.User, error)
+	GetUserByID(id string) (*models.User, error)
 	GetUserByEmail(email string) (*models.User, error)
 	GetUserByLogin(login string) (*models.User, error)
-	DeleteUser(id int) error
+	DeleteUser(id string) error
 }
 
 // MgoDL implements DataLayerInterface
@@ -35,6 +35,7 @@ const USER_COLLECTION = "account"
 var (
 	mainSession *mgo.Session
 	mainDB      *mgo.Database
+	DBName      string
 )
 
 // Init inits the DB
@@ -43,13 +44,16 @@ func (m *MgoDL) Init() error {
 	mPort := flag.String("mport", "27017", "MongoDB's port")
 	mName := flag.String("mname", "crm", "MongoDB's name")
 	flag.Parse()
-	var err error
-	mainSession, err = mgo.Dial(fmt.Sprintf("mongodb://%s:%s", *mHost, *mPort))
+	mainSession, err := mgo.Dial(fmt.Sprintf("mongodb://%s:%s", *mHost, *mPort))
 	if err != nil {
-		return err
+		panic(err)
 	}
-	m.DBName = *mName
 	mainDB = mainSession.DB(*mName)
+
+	m.Session = mainSession.Copy()
+
+	s := m.Session.Copy()
+	defer s.Close()
 	return nil
 }
 
@@ -109,8 +113,8 @@ func (m *MgoDL) GetUserByEmail(email string) (*models.User, error) {
 }
 
 // DeleteUser delete a user identified by its id
-func (m *MgoDL) DeleteUser(id int) error {
-	if id <= 0 {
+func (m *MgoDL) DeleteUser(id string) error {
+	if id == "" {
 		return fmt.Errorf("Error, invalid argument: id must be > 0")
 	}
 

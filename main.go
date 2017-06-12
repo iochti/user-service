@@ -33,8 +33,9 @@ func main() {
 	keyFile := flag.String("key", "", "Path to PEM-encoded secret key")
 	flag.Parse()
 	svc := &UserSvc{
-	// Db: Db,
+		Db: Db,
 	}
+	fmt.Println(svc.Db)
 	var server *grpc.Server
 
 	// Create server, with TLS if cert & key are specified
