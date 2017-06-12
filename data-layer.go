@@ -1,9 +1,11 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
+
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/namsral/flag"
 
@@ -22,138 +24,100 @@ type DataLayerInterface interface {
 	DeleteUser(id int) error
 }
 
-// PostgresDL implements the DataLayerInterface
-type PostgresDL struct {
-	DBName string
-	Host   string
-	Db     *sql.DB
+// MgoDL implements DataLayerInterface
+type MgoDL struct {
+	DBName  string
+	Session *mgo.Session
 }
 
-const USER_TABLE = "account"
+const USER_COLLECTION = "account"
 
-// Init fetches db flags and init the db conn
-func (p *PostgresDL) Init() error {
-	// Parse DB flags
-	host := flag.String("pq-host", "localhost", "PostgresSQL database host")
-	user := flag.String("pq-user", "postgres", "PostgresSQL user")
-	dbName := flag.String("pq-db", "iochti", "PostgresSQL DBName")
-	password := flag.String("pq-pwd", "", "PostgresSQL user password")
+var (
+	mainSession *mgo.Session
+	mainDB      *mgo.Database
+)
+
+// Init inits the DB
+func (m *MgoDL) Init() error {
+	mHost := flag.String("mhost", "localhost", "MongoDB database host")
+	mPort := flag.String("mport", "27017", "MongoDB's port")
+	mName := flag.String("mname", "crm", "MongoDB's name")
 	flag.Parse()
-
-	// Create a db connection
-	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", *user, *password, *host, *dbName))
+	var err error
+	mainSession, err = mgo.Dial(fmt.Sprintf("mongodb://%s:%s", *mHost, *mPort))
 	if err != nil {
 		return err
 	}
-	p.Db = db
+	m.DBName = *mName
+	mainDB = mainSession.DB(*mName)
 	return nil
 }
 
 // CreateUser creates a user passed as parameter
-func (p *PostgresDL) CreateUser(user *models.User) error {
-	var userID int
+func (m *MgoDL) CreateUser(user *models.User) error {
 	timeCreated := time.Now()
-	err := p.Db.QueryRow("INSERT INTO "+USER_TABLE+`(name, login, avatar, email, created_at, updated_at)
-		VALUES($1, $2, $3, $4, $5, $5) RETURNING id;`,
-		user.Name, user.Login, user.AvatarURL, user.Email, timeCreated).Scan(&userID)
-
-	if err != nil {
-		return err
-	}
-	user.ID = userID
+	sess := m.Session.Copy()
+	defer sess.Close()
+	user.ID = bson.NewObjectId().String()
 	user.Created = timeCreated
 	user.Updated = timeCreated
+	if err := sess.DB(m.DBName).C(USER_COLLECTION).Insert(&user); err != nil {
+		return err
+	}
 	return nil
 }
 
 // GetUserByID fetch a user by its user id
-func (p *PostgresDL) GetUserByID(id int) (*models.User, error) {
-	// Check ID values
-	if id <= 0 {
-		return nil, fmt.Errorf("Error, invalid search ID: id must be > 0")
-	}
-	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, email, created_at, updated_at FROM "+USER_TABLE+" WHERE id=$1;", id).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Login,
-		&user.AvatarURL,
-		&user.Email,
-		&user.Created,
-		&user.Updated,
-	)
-
-	if err != nil {
+func (m *MgoDL) GetUserByID(id string) (*models.User, error) {
+	sess := m.Session.Copy()
+	defer sess.Close()
+	var user models.User
+	if err := sess.DB(m.DBName).C(USER_COLLECTION).FindId(id).One(&user); err != nil {
 		return nil, err
 	}
-
-	return user, nil
+	return &user, nil
 }
 
 // GetUserByLogin fetch a user by its github login
-func (p *PostgresDL) GetUserByLogin(login string) (*models.User, error) {
+func (m *MgoDL) GetUserByLogin(login string) (*models.User, error) {
+	sess := m.Session.Copy()
+	defer sess.Close()
 	// Check ID values
 	if login == "" {
 		return nil, fmt.Errorf("Error, invalid search: login must not be empty")
 	}
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, email, created_at, updated_at FROM "+USER_TABLE+" WHERE login=$1;", login).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Login,
-		&user.AvatarURL,
-		&user.Email,
-		&user.Created,
-		&user.Updated,
-	)
-
-	if err != nil {
+	if err := sess.DB(m.DBName).C(USER_COLLECTION).Find(bson.M{"login": bson.M{"$eq": login}}).One(&user); err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
 // GetUserByEmail fetch a user by its github email
-func (p *PostgresDL) GetUserByEmail(email string) (*models.User, error) {
+func (m *MgoDL) GetUserByEmail(email string) (*models.User, error) {
 	// Check ID values
 	if email == "" {
 		return nil, fmt.Errorf("Error, invalid search: login must not be empty")
 	}
+	sess := m.Session.Copy()
+	defer sess.Close()
 	user := new(models.User)
-	err := p.Db.QueryRow("SELECT id, name, login, avatar, email, created_at, updated_at FROM "+USER_TABLE+" WHERE email=$1;", email).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Login,
-		&user.AvatarURL,
-		&user.Email,
-		&user.Created,
-		&user.Updated,
-	)
-
-	if err != nil {
+	if err := sess.DB(m.DBName).C(USER_COLLECTION).Find(bson.M{"email": bson.M{"$eq": email}}).One(&user); err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
 // DeleteUser delete a user identified by its id
-func (p *PostgresDL) DeleteUser(id int) error {
+func (m *MgoDL) DeleteUser(id int) error {
 	if id <= 0 {
 		return fmt.Errorf("Error, invalid argument: id must be > 0")
 	}
 
-	res, err := p.Db.Exec("DELETE FROM "+USER_TABLE+" WHERE id = $1;", id)
-	if err != nil {
+	sess := m.Session.Copy()
+	defer sess.Close()
+	if err := sess.DB(m.DBName).C(USER_COLLECTION).RemoveId(id); err != nil {
 		return err
-	}
-	count, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if count == 0 {
-		return fmt.Errorf("Error: no row deleted")
 	}
 	return nil
 }

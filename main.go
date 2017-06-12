@@ -12,10 +12,10 @@ import (
 )
 
 // Db is used to init the DB connection in init() method
-var Db *PostgresDL
+var Db *MgoDL
 
 func init() {
-	Db = new(PostgresDL)
+	Db = new(MgoDL)
 	Db.Init()
 }
 
@@ -33,7 +33,7 @@ func main() {
 	keyFile := flag.String("key", "", "Path to PEM-encoded secret key")
 	flag.Parse()
 	svc := &UserSvc{
-		Db: Db,
+	// Db: Db,
 	}
 	var server *grpc.Server
 

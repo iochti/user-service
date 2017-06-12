@@ -82,12 +82,12 @@ func (u *UserSvc) CreateUser(ctx context.Context, in *pb.UserMessage) (*pb.UserM
 func (u *UserSvc) DeleteUser(ctx context.Context, in *pb.UserID) (*pb.UserDeleted, error) {
 	userID := in.GetId()
 
-	if userID <= 0 {
+	if userID == "" {
 		return nil, fmt.Errorf("Error, id should be > 0")
 	}
 
 	// If the deletion fails
-	if err := u.Db.DeleteUser(int(userID)); err != nil {
+	if err := u.Db.DeleteUser(userID); err != nil {
 		return nil, err
 	}
 	res := new(pb.UserDeleted)
