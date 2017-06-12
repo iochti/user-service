@@ -35,7 +35,6 @@ func main() {
 	svc := &UserSvc{
 		Db: Db,
 	}
-	fmt.Println(svc.Db)
 	var server *grpc.Server
 
 	// Create server, with TLS if cert & key are specified
